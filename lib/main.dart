@@ -56,51 +56,102 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Трекер витрат', style: GoogleFonts.coiny(fontWeight: FontWeight.w700),),
-         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {}); 
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.list),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => QuickViewPage()),
-              );
-            },
-          ),
-        ],
+      extendBodyBehindAppBar: true,
+  appBar: AppBar(
+    title: Text(
+      'Трекер витрат',
+      style: GoogleFonts.notoSansDeseret(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+    ),
+    centerTitle: true,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    actions: [
+      IconButton(
+        icon: Icon(Icons.refresh),
+        onPressed: () {
+          setState(() {});
+        },
+      ),
+      IconButton(
+        icon: Icon(Icons.list),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => QuickViewPage()),
+          );
+        },
+      ),
+    ],
+  ),
+  body: Stack(
+    children: [
+      Positioned.fill(
+        child: Image.asset(
+          'lib/assets/pexels-hngstrm-1939485.jpg',
+          fit: BoxFit.cover,
+        ),
+      ),
+      Container(
+        color: Colors.white.withOpacity(0.8), // напівпрозорий шар
+      ),
+      Padding(
+         padding: const EdgeInsets.fromLTRB(16.0, kToolbarHeight + 24, 16.0, 16.0),
         child: Column(
           children: [
             TextField(
-              controller: _amountController,
-              decoration: InputDecoration(
-                labelText: 'Введіть суму',
-              ),
-              keyboardType: TextInputType.number,
-            ),
+  controller: _amountController,
+  decoration: InputDecoration(
+    labelText: 'Введіть суму',
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+  keyboardType: TextInputType.number,
+),
+
+SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () => addTransaction('income'),
-                  child: Text('Додати дохід'),
-                ),
-                ElevatedButton(
-                  onPressed: () => addTransaction('expense'),
-                  child: Text('Додати витрату'),
-                ),
-              ],
-            ),
+  mainAxisAlignment: MainAxisAlignment.spaceAround,
+  children: [
+    ElevatedButton.icon(
+      onPressed: () => addTransaction('income'),
+      icon: Icon(Icons.arrow_downward, color: Colors.white),
+      label: Text(
+        'Додати дохід',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.green[600],
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        elevation: 4,
+        textStyle: TextStyle(fontSize: 16),
+      ),
+    ),
+    ElevatedButton.icon(
+      onPressed: () => addTransaction('expense'),
+      icon: Icon(Icons.arrow_upward, color: Colors.white),
+      label: Text(
+        'Додати витрату',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red[600],
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        elevation: 4,
+        textStyle: TextStyle(fontSize: 16),
+      ),
+    ),
+  ],
+),
+
             SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
@@ -133,12 +184,13 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                   double balance = income - expenses;
 
                   return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Доходи: \$${income.toStringAsFixed(2)}'),
-                      Text('Витрати: \$${expenses.toStringAsFixed(2)}'),
-                      Text('Залишок: \$${balance.toStringAsFixed(2)}'),
-                      Divider(),
+                      _buildHorizontalSummaryCards(
+                        income: income,
+                        expenses: expenses,
+                        balance: balance,
+                      ),
+                      SizedBox(height: 16),
                       Expanded(
                         child: ListView(
                           children: snapshot.data!.docs.map((doc) {
@@ -153,7 +205,7 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: ListTile(
                                 title: Text(
-                                  '${type == 'income' ? 'Дохід' : 'Витрата'}: \$${amount}',
+                                  '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
@@ -165,7 +217,7 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                                   icon: Icon(Icons.delete, color: Colors.grey[800]),
                                   onPressed: () async {
                                     await _firestore.collection('transactions').doc(id).delete();
-                                    setState(() {}); 
+                                    setState(() {});
                                   },
                                 ),
                               ),
@@ -176,6 +228,84 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                     ],
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ]
+  )
+    );
+    
+    
+    
+  }
+
+  Widget _buildHorizontalSummaryCards({
+    required double income,
+    required double expenses,
+    required double balance,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildSummaryTile(
+          title: 'Доходи',
+          amount: income,
+          color: Colors.green,
+          icon: Icons.arrow_downward,
+        ),
+        _buildSummaryTile(
+          title: 'Витрати',
+          amount: expenses,
+          color: Colors.red,
+          icon: Icons.arrow_upward,
+        ),
+        _buildSummaryTile(
+          title: 'Залишок',
+          amount: balance,
+          color: Colors.blue,
+          icon: Icons.account_balance_wallet,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryTile({
+    required String title,
+    required double amount,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: Container(
+        height: 275,
+        margin: EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 32),
+            SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: color,
+                fontSize: 14,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '${amount.toStringAsFixed(2)} грн',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: color,
               ),
             ),
           ],
@@ -224,7 +354,7 @@ class QuickViewPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   title: Text(
-                    '${type == 'income' ? 'Дохід' : 'Витрата'}: \$${amount}',
+                    '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
