@@ -81,7 +81,7 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => QuickViewPage()),
+            MaterialPageRoute(builder: (context) => HistoryPage()),
           );
         },
       ),
@@ -315,7 +315,7 @@ SizedBox(height: 20),
   }
 }
 
-class QuickViewPage extends StatelessWidget {
+class HistoryPage extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<QuerySnapshot> getTransactions() {
@@ -325,54 +325,76 @@ class QuickViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Швидкий перегляд')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: getTransactions(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text('Історія'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'lib/assets/pexels-hngstrm-1939485.jpg', // твій фон
+              fit: BoxFit.cover,
+            ),
+          ),
+          Container(
+            color: Colors.white.withOpacity(0.8), // напівпрозорий шар
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: kToolbarHeight + 24),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: getTransactions(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Помилка завантаження'));
-          }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Помилка завантаження'));
+                }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('Немає транзакцій'));
-          }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text('Немає транзакцій'));
+                }
 
-          return ListView(
-            children: snapshot.data!.docs.map((doc) {
-              final id = doc.id;
-              final type = doc['type'];
-              final amount = doc['amount'];
-              final timestamp = doc['timestamp'];
+                return ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  children: snapshot.data!.docs.map((doc) {
+                    final id = doc.id;
+                    final type = doc['type'];
+                    final amount = doc['amount'];
+                    final timestamp = doc['timestamp'];
 
-              return Card(
-                color: type == 'income' ? Colors.green[50] : Colors.red[50],
-                margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  title: Text(
-                    '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    timestamp != null
-                        ? DateFormat.yMd().add_Hm().format((timestamp as Timestamp).toDate())
-                        : 'Час не вказано',
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () async {
-                      await _firestore.collection('transactions').doc(id).delete();
-                    },
-                  ),
-                ),
-              );
-            }).toList(),
-          );
-        },
+                    return Card(
+                      color: type == 'income' ? Colors.green[50] : Colors.red[50],
+                      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        title: Text(
+                          '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          timestamp != null
+                              ? DateFormat.yMd().add_Hm().format((timestamp as Timestamp).toDate())
+                              : 'Час не вказано',
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () async {
+                            await _firestore.collection('transactions').doc(id).delete();
+                          },
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
