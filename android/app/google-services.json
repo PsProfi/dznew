@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "114897730859",
+    "project_id": "dzprg-135e0",
+    "storage_bucket": "dzprg-135e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114897730859:android:c7b970f9504d5da5d4d96e",
+        "android_client_info": {
+          "package_name": "com.example.dz32"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFYko4vEv1Z_F7u7bt592uHcRnzRva8lg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

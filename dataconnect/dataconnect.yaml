@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "dz32"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "dz32-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
