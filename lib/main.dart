@@ -96,7 +96,7 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
         ),
       ),
       Container(
-        color: Colors.white.withOpacity(0.8), // напівпрозорий шар
+        color: Colors.white.withOpacity(0.8), 
       ),
       Padding(
          padding: const EdgeInsets.fromLTRB(16.0, kToolbarHeight + 24, 16.0, 16.0),
@@ -335,12 +335,12 @@ class HistoryPage extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'lib/assets/pexels-hngstrm-1939485.jpg', // твій фон
+              'lib/assets/pexels-hngstrm-1939485.jpg',
               fit: BoxFit.cover,
             ),
           ),
           Container(
-            color: Colors.white.withOpacity(0.8), // напівпрозорий шар
+            color: Colors.white.withOpacity(0.8), 
           ),
           Padding(
             padding: const EdgeInsets.only(top: kToolbarHeight + 24),
