@@ -36,6 +36,8 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
   final _amountController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  String sorting = "by_date"; 
+
   Future<void> addTransaction(String type) async {
     double amount = double.tryParse(_amountController.text) ?? 0;
     if (amount > 0) {
@@ -45,7 +47,7 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
         'timestamp': FieldValue.serverTimestamp(),
       });
       _amountController.clear();
-      setState(() {}); 
+      setState(() {});
     }
   }
 
@@ -57,188 +59,227 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-  appBar: AppBar(
-    title: Text(
-      'Трекер витрат',
-      style: GoogleFonts.notoSansDeseret(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: Colors.black,
-      ),
-    ),
-    centerTitle: true,
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    actions: [
-      IconButton(
-        icon: Icon(Icons.refresh),
-        onPressed: () {
-          setState(() {});
-        },
-      ),
-      IconButton(
-        icon: Icon(Icons.list),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => HistoryPage()),
-          );
-        },
-      ),
-    ],
-  ),
-  body: Stack(
-    children: [
-      Positioned.fill(
-        child: Image.asset(
-          'lib/assets/pexels-hngstrm-1939485.jpg',
-          fit: BoxFit.cover,
+      appBar: AppBar(
+        forceMaterialTransparency: true,
+        title: Text(
+          'Трекер витрат',
+          style: GoogleFonts.notoSansDeseret(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
         ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {});
+            },
+            
+          ),
+        ],
+        
       ),
-      Container(
-        color: Colors.white.withOpacity(0.8), 
-      ),
-      Padding(
-         padding: const EdgeInsets.fromLTRB(16.0, kToolbarHeight + 24, 16.0, 16.0),
-        child: Column(
-          children: [
-            TextField(
-  controller: _amountController,
-  decoration: InputDecoration(
-    labelText: 'Введіть суму',
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-  ),
-  keyboardType: TextInputType.number,
-),
-
-SizedBox(height: 20),
-            Row(
-  mainAxisAlignment: MainAxisAlignment.spaceAround,
-  children: [
-    ElevatedButton.icon(
-      onPressed: () => addTransaction('income'),
-      icon: Icon(Icons.arrow_downward, color: Colors.white),
-      label: Text(
-        'Додати дохід',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green[600],
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        elevation: 4,
-        textStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-    ElevatedButton.icon(
-      onPressed: () => addTransaction('expense'),
-      icon: Icon(Icons.arrow_upward, color: Colors.white),
-      label: Text(
-        'Додати витрату',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red[600],
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        elevation: 4,
-        textStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-  ],
-),
-
-            SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: getTransactions(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Помилка при завантаженні даних'));
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Center(child: Text('Немає транзакцій'));
-                  }
-
-                  double income = 0;
-                  double expenses = 0;
-
-                  snapshot.data!.docs.forEach((doc) {
-                    final amount = (doc['amount'] as num).toDouble();
-                    if (doc['type'] == 'income') {
-                      income += amount;
-                    } else if (doc['type'] == 'expense') {
-                      expenses += amount;
-                    }
-                  });
-
-                  double balance = income - expenses;
-
-                  return Column(
-                    children: [
-                      _buildHorizontalSummaryCards(
-                        income: income,
-                        expenses: expenses,
-                        balance: balance,
-                      ),
-                      SizedBox(height: 16),
-                      Expanded(
-                        child: ListView(
-                          children: snapshot.data!.docs.map((doc) {
-                            final id = doc.id;
-                            final type = doc['type'];
-                            final amount = doc['amount'];
-                            final timestamp = doc['timestamp'];
-
-                            return Card(
-                              color: type == 'income' ? Colors.green[100] : Colors.red[100],
-                              margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: ListTile(
-                                title: Text(
-                                  '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  timestamp != null
-                                      ? DateFormat.yMd().add_Hm().format((timestamp as Timestamp).toDate())
-                                      : 'Очікуємо час...',
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.grey[800]),
-                                  onPressed: () async {
-                                    await _firestore.collection('transactions').doc(id).delete();
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+      
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'lib/assets/pexels-hngstrm-1939485.jpg',
+              fit: BoxFit.cover,
             ),
-          ],
-        ),
+          ),
+          Container(
+            color: Colors.white.withOpacity(0.8),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, kToolbarHeight + 24, 16.0, 16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _amountController,
+                  decoration: InputDecoration(
+                    labelText: 'Введіть суму',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => addTransaction('income'),
+                      icon: Icon(Icons.arrow_downward, color: Colors.white),
+                      label: Text(
+                        'Додати дохід',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 4,
+                        textStyle: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => addTransaction('expense'),
+                      icon: Icon(Icons.arrow_upward, color: Colors.white),
+                      label: Text(
+                        'Додати витрату',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[600],
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 4,
+                        textStyle: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                SizedBox(height: 8),
+
+                SizedBox(height: 16),
+
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: getTransactions(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Помилка при завантаженні даних'));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(child: Text('Немає транзакцій'));
+                      }
+
+                      double income = 0;
+                      double expenses = 0;
+
+                      final docs = snapshot.data!.docs;
+                      docs.forEach((doc) {
+                        final amount = (doc['amount'] as num).toDouble();
+                        if (doc['type'] == 'income') {
+                          income += amount;
+                        } else if (doc['type'] == 'expense') {
+                          expenses += amount;
+                        }
+                      });
+
+                      double balance = income - expenses;
+
+                     
+                      if (sorting == "by_date") {
+                        docs.sort(sortByTimestamp);
+                      } else if (sorting == "by_amount") {
+                        docs.sort(sortByAmount);
+                      }
+
+                      return Column(
+                        children: [
+                          _buildHorizontalSummaryCards(
+                            income: income,
+                            expenses: expenses,
+                            balance: balance,
+                          ),
+                          SizedBox(height: 16),
+
+                          
+
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Сортування: ${sorting == "by_date" ? "за датою" : "за сумою"}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.sort),
+                      onSelected: (value) {
+                        setState(() {
+                          sorting = value;
+                        });
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'by_date',
+                          child: Text('Сортувати за датою'),
+                        ),
+                        PopupMenuItem(
+                          value: 'by_amount',
+                          child: Text('Сортувати за сумою'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                          Expanded(
+                            child: ScrollConfiguration(
+                              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                              child: ListView(
+                                
+                                padding: EdgeInsets.all(0),
+                                children: docs.map((doc) {
+                                  final id = doc.id;
+                                  final type = doc['type'];
+                                  final amount = doc['amount'];
+                                  final timestamp = doc['timestamp'];
+                              
+                                  return Card(
+                                    color: type == 'income' ? Colors.green[100] : Colors.red[100],
+                                    margin: EdgeInsets.only(top: 6, bottom: 6, left: 4, right: 4),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    child: ListTile(
+                                      title: Text(
+                                        '${type == 'income' ? 'Дохід' : 'Витрата'}: ${amount} грн',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                        timestamp != null
+                                            ? DateFormat.yMd().add_Hm().format((timestamp as Timestamp).toDate())
+                                            : 'Очікуємо час...',
+                                      ),
+                                      trailing: IconButton(
+                                        icon: Icon(Icons.delete, color: Colors.grey[800]),
+                                        onPressed: () async {
+                                          await _firestore.collection('transactions').doc(id).delete();
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    ]
-  )
     );
-    
-    
-    
   }
 
   Widget _buildHorizontalSummaryCards({
@@ -360,6 +401,7 @@ class HistoryPage extends StatelessWidget {
                 }
 
                 return ListView(
+                  reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   children: snapshot.data!.docs.map((doc) {
                     final id = doc.id;
@@ -399,3 +441,34 @@ class HistoryPage extends StatelessWidget {
     );
   }
 }
+
+int sortByTimestamp(d1, d2) {
+  final timestamp1 = (d1['timestamp'] as Timestamp?)?.toDate();
+  final timestamp2 = (d2['timestamp'] as Timestamp?)?.toDate();
+
+  if (timestamp1 == null || timestamp2 == null) {
+    return 0;
+  }
+
+  if (timestamp1.isBefore(timestamp2)) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+
+int sortByAmount(d1, d2) {
+  final amount1 = d1['amount'] as double?;
+  final amount2 = d2['amount'] as double?;
+
+  if (amount1 == null || amount2 == null) {
+    return 0;
+  }
+
+  if (amount1 < amount2) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+
